@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reductor de enlaces</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root{
+    --bg: #12141a;
+    --surface: #1b1e27;
+    --surface-2: #232733;
+    --text: #e8e6df;
+    --text-dim: #9a9fac;
+    --accent: #5eead4;
+    --accent-dim: #2f5f58;
+    --warn: #f2b84b;
+    --border: #2c303c;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin:0;
+    padding:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+
+  body{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 32px 16px;
+  }
+
+  .card{
+    width: 100%;
+    max-width: 480px;
+  }
+
+  .kicker{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin: 0 0 6px 2px;
+    letter-spacing: 0.02em;
+  }
+
+  h1{
+    font-size: 28px;
+    line-height: 1.2;
+    font-weight: 700;
+    margin: 0 0 24px 0;
+    max-width: 22ch;
+  }
+
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-bottom: 14px;
+  }
+
+  label{
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  input[type="url"]{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s ease;
+    width: 100%;
+  }
+
+  input[type="url"]:focus{
+    border-color: var(--accent);
+  }
+
+  input[type="url"]::placeholder{
+    color: #565c6b;
+  }
+
+  button{
+    background: var(--accent);
+    color: #0a1614;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    width: 100%;
+    transition: transform 0.1s ease, background 0.15s ease;
+  }
+
+  button:hover{ background: #78f2e0; }
+  button:active{ transform: scale(0.98); }
+
+  button:disabled{
+    background: var(--surface-2);
+    color: var(--text-dim);
+    cursor: not-allowed;
+  }
+
+  .result{
+    margin-top: 22px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    display: none;
+  }
+
+  .result.show{
+    display: block;
+    animation: reveal 0.35s ease;
+  }
+
+  @keyframes reveal{
+    from{ opacity: 0; transform: translateY(6px); }
+    to{ opacity: 1; transform: translateY(0); }
+  }
+
+  .result-label{
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .result-row{
+    display:flex;
+    gap: 8px;
+    align-items:center;
+  }
+
+  .result-url{
+    flex: 1;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px;
+    color: var(--accent);
+    background: var(--surface-2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .copy-btn{
+    width: auto;
+    padding: 10px 14px;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .status{
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--text-dim);
+    min-height: 18px;
+  }
+
+  .status.error{ color: #f28b6b; }
+  .status.ok{ color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <p class="kicker">reductor de direcciones</p>
+  <h1>Convierte un enlace largo en uno corto y fácil de compartir</h1>
+
+  <div class="field">
+    <label for="url">Pega tu enlace</label>
+    <input type="url" id="url" placeholder="https://ejemplo.com/una/ruta/muy/larga?con=parametros" autocomplete="off">
+  </div>
+
+  <button id="shorten-btn">Reducir enlace</button>
+
+  <p class="status" id="status"></p>
+
+  <div class="result" id="result">
+    <p class="result-label">Tu enlace reducido</p>
+    <div class="result-row">
+      <div class="result-url" id="short-url"></div>
+      <button class="copy-btn" id="copy-btn">Copiar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const input = document.getElementById('url');
+  const btn = document.getElementById('shorten-btn');
+  const status = document.getElementById('status');
+  const result = document.getElementById('result');
+  const shortUrlEl = document.getElementById('short-url');
+  const copyBtn = document.getElementById('copy-btn');
+
+  function isValidUrl(str){
+    try{
+      const u = new URL(str);
+      return u.protocol === 'http:' || u.protocol === 'https:';
+    }catch{
+      return false;
+    }
+  }
+
+  async function shortenUrl(){
+    const value = input.value.trim();
+
+    if(!value){
+      status.textContent = 'Escribe o pega un enlace primero.';
+      status.className = 'status error';
+      return;
+    }
+
+    if(!isValidUrl(value)){
+      status.textContent = 'Ese enlace no parece válido. Debe empezar con http:// o https://';
+      status.className = 'status error';
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Reduciendo…';
+    status.textContent = '';
+    status.className = 'status';
+    result.classList.remove('show');
+
+    try{
+      const res = await fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(value));
+      if(!res.ok) throw new Error('respuesta no válida del servicio');
+      const shortened = await res.text();
+
+      if(!shortened.startsWith('http')){
+        throw new Error('el servicio no devolvió un enlace válido');
+      }
+
+      shortUrlEl.textContent = shortened;
+      result.classList.add('show');
+      status.textContent = '';
+    }catch(err){
+      status.textContent = 'No se pudo reducir el enlace. Intenta de nuevo en unos segundos.';
+      status.className = 'status error';
+    }finally{
+      btn.disabled = false;
+      btn.textContent = 'Reducir enlace';
+    }
+  }
+
+  btn.addEventListener('click', shortenUrl);
+  input.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') shortenUrl();
+  });
+
+  copyBtn.addEventListener('click', async () => {
+    try{
+      await navigator.clipboard.writeText(shortUrlEl.textContent);
+      copyBtn.textContent = 'Copiado';
+      status.textContent = 'Enlace copiado al portapapeles.';
+      status.className = 'status ok';
+      setTimeout(() => { copyBtn.textContent = 'Copiar'; }, 1800);
+    }catch{
+      status.textContent = 'No se pudo copiar automáticamente. Selecciónalo a mano.';
+      status.className = 'status error';
+    }
+  });
+</script>
+
+</body>
+</html>
