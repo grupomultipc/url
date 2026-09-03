@@ -1,281 +1,226 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Reductor de enlaces</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
-
-  :root{
-    --bg: #12141a;
-    --surface: #1b1e27;
-    --surface-2: #232733;
-    --text: #e8e6df;
-    --text-dim: #9a9fac;
-    --accent: #5eead4;
-    --accent-dim: #2f5f58;
-    --warn: #f2b84b;
-    --border: #2c303c;
-  }
-
-  *{ box-sizing: border-box; }
-
-  html, body{
-    margin:0;
-    padding:0;
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Space Grotesk', system-ui, sans-serif;
-    min-height: 100vh;
-  }
-
-  body{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding: 32px 16px;
-  }
-
-  .card{
-    width: 100%;
-    max-width: 480px;
-  }
-
-  .kicker{
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
-    color: var(--text-dim);
-    margin: 0 0 6px 2px;
-    letter-spacing: 0.02em;
-  }
-
-  h1{
-    font-size: 28px;
-    line-height: 1.2;
-    font-weight: 700;
-    margin: 0 0 24px 0;
-    max-width: 22ch;
-  }
-
-  .field{
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-    margin-bottom: 14px;
-  }
-
-  label{
-    font-size: 13px;
-    color: var(--text-dim);
-  }
-
-  input[type="url"]{
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px 16px;
-    color: var(--text);
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 14px;
-    outline: none;
-    transition: border-color 0.15s ease;
-    width: 100%;
-  }
-
-  input[type="url"]:focus{
-    border-color: var(--accent);
-  }
-
-  input[type="url"]::placeholder{
-    color: #565c6b;
-  }
-
-  button{
-    background: var(--accent);
-    color: #0a1614;
-    border: none;
-    border-radius: 10px;
-    padding: 14px 18px;
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 600;
-    font-size: 15px;
-    cursor: pointer;
-    width: 100%;
-    transition: transform 0.1s ease, background 0.15s ease;
-  }
-
-  button:hover{ background: #78f2e0; }
-  button:active{ transform: scale(0.98); }
-
-  button:disabled{
-    background: var(--surface-2);
-    color: var(--text-dim);
-    cursor: not-allowed;
-  }
-
-  .result{
-    margin-top: 22px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 18px;
-    display: none;
-  }
-
-  .result.show{
-    display: block;
-    animation: reveal 0.35s ease;
-  }
-
-  @keyframes reveal{
-    from{ opacity: 0; transform: translateY(6px); }
-    to{ opacity: 1; transform: translateY(0); }
-  }
-
-  .result-label{
-    font-size: 12px;
-    color: var(--text-dim);
-    margin-bottom: 8px;
-  }
-
-  .result-row{
-    display:flex;
-    gap: 8px;
-    align-items:center;
-  }
-
-  .result-url{
-    flex: 1;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 15px;
-    color: var(--accent);
-    background: var(--surface-2);
-    border-radius: 8px;
-    padding: 10px 12px;
-    overflow-x: auto;
-    white-space: nowrap;
-  }
-
-  .copy-btn{
-    width: auto;
-    padding: 10px 14px;
-    font-size: 13px;
-    flex-shrink: 0;
-  }
-
-  .status{
-    margin-top: 12px;
-    font-size: 13px;
-    color: var(--text-dim);
-    min-height: 18px;
-  }
-
-  .status.error{ color: #f28b6b; }
-  .status.ok{ color: var(--accent); }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Generador de códigos de barras</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+    :root{ --bg: #12141a; --surface: #1b1e27; --surface-2: #232733; --text: #e8e6df; --text-dim: #9a9fac; --accent: #5eead4; --border: #2c303c; }
+    *{ box-sizing: border-box; }
+    html,body{ margin:0; padding:0; background:var(--bg); color:var(--text); font-family:'Space Grotesk',system-ui,sans-serif; min-height:100vh; }
+    body{ display:flex; align-items:center; justify-content:center; padding:32px 16px; }
+    .card{ width:100%; max-width:680px; }
+    .kicker{ font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--text-dim); margin:0 0 6px 2px; }
+    h1{ font-size:24px; margin:0 0 16px 0; }
+    .grid{ display:grid; grid-template-columns: 1fr 240px; gap:16px; }
+    .field{ display:flex; flex-direction:column; gap:8px; margin-bottom:14px; }
+    label{ font-size:13px; color:var(--text-dim); }
+    input, select{ background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 14px; color:var(--text); font-family:'IBM Plex Mono',monospace; font-size:14px; outline:none; }
+    button{ background:var(--accent); color:#071412; border:none; border-radius:10px; padding:12px 14px; font-weight:600; cursor:pointer; }
+    .preview{ background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:16px; display:flex; flex-direction:column; gap:12px; align-items:center; justify-content:center; min-height:200px; }
+    .preview .barcode-wrap{ width:100%; display:flex; align-items:center; justify-content:center; }
+    .controls{ display:flex; gap:8px; flex-wrap:wrap; }
+    .small{ padding:8px 10px; font-size:13px; }
+    .status{ margin-top:10px; font-size:13px; color:var(--text-dim); min-height:18px; }
+    a.link{ color:var(--accent); }
+    @media (max-width:720px){ .grid{ grid-template-columns: 1fr; } .card{ max-width:520px; } }
+  </style>
 </head>
 <body>
+  <div class="card">
+    <p class="kicker">Herramientas</p>
+    <h1>Generador y descarga de códigos (JPG · PDF · XLSX)</h1>
 
-<div class="card">
-  <p class="kicker">reductor de direcciones</p>
-  <h1>Convierte un enlace largo en uno corto y fácil de compartir</h1>
+    <div class="grid">
+      <div>
+        <div class="field">
+          <label for="data">Dato para el código</label>
+          <input id="data" placeholder="Ingresa texto, número o URL" autocomplete="off">
+        </div>
 
-  <div class="field">
-    <label for="url">Pega tu enlace</label>
-    <input type="url" id="url" placeholder="https://ejemplo.com/una/ruta/muy/larga?con=parametros" autocomplete="off">
-  </div>
+        <div class="field">
+          <label for="type">Tipo de código</label>
+          <select id="type">
+            <option value="CODE128">CODE128</option>
+            <option value="EAN13">EAN13</option>
+            <option value="CODE39">CODE39</option>
+            <option value="QR">QR</option>
+          </select>
+        </div>
 
-  <button id="shorten-btn">Reducir enlace</button>
+        <div class="field">
+          <label for="options">Opciones</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input id="showValue" type="checkbox" checked style="width:16px;height:16px;" />
+            <label for="showValue" style="margin:0;font-size:13px;color:var(--text-dim);">Mostrar valor debajo</label>
+          </div>
+        </div>
 
-  <p class="status" id="status"></p>
+        <div style="display:flex;gap:8px;margin-top:6px;">
+          <button id="generate" class="small">Generar</button>
+          <button id="downloadJpg" class="small">Descargar JPG</button>
+          <button id="downloadPdf" class="small">Descargar PDF</button>
+          <button id="downloadXlsx" class="small">Descargar XLSX</button>
+        </div>
 
-  <div class="result" id="result">
-    <p class="result-label">Tu enlace reducido</p>
-    <div class="result-row">
-      <div class="result-url" id="short-url"></div>
-      <button class="copy-btn" id="copy-btn">Copiar</button>
+        <p class="status" id="status">Nota: el XLSX incluye la data URL (base64) de la imagen en una celda.</p>
+      </div>
+
+      <div>
+        <div class="preview" id="preview">
+          <div class="barcode-wrap" id="barcodeWrap">
+            <!-- SVG / Canvas target -->
+            <svg id="barcodeSvg" style="display:none;"></svg>
+            <canvas id="qrCanvas" style="display:none;max-width:100%;height:auto;"></canvas>
+          </div>
+          <div id="displayValue" style="font-family:'IBM Plex Mono',monospace;color:var(--text-dim);"></div>
+        </div>
+      </div>
     </div>
+
   </div>
-</div>
 
-<script>
-  const input = document.getElementById('url');
-  const btn = document.getElementById('shorten-btn');
-  const status = document.getElementById('status');
-  const result = document.getElementById('result');
-  const shortUrlEl = document.getElementById('short-url');
-  const copyBtn = document.getElementById('copy-btn');
+  <!-- Dependencies -->
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-  function isValidUrl(str){
-    try{
-      const u = new URL(str);
-      return u.protocol === 'http:' || u.protocol === 'https:';
-    }catch{
-      return false;
+  <script>
+    const dataInput = document.getElementById('data');
+    const typeSelect = document.getElementById('type');
+    const generateBtn = document.getElementById('generate');
+    const downloadJpgBtn = document.getElementById('downloadJpg');
+    const downloadPdfBtn = document.getElementById('downloadPdf');
+    const downloadXlsxBtn = document.getElementById('downloadXlsx');
+    const preview = document.getElementById('preview');
+    const barcodeSvg = document.getElementById('barcodeSvg');
+    const qrCanvas = document.getElementById('qrCanvas');
+    const barcodeWrap = document.getElementById('barcodeWrap');
+    const displayValue = document.getElementById('displayValue');
+    const statusEl = document.getElementById('status');
+
+    let lastDataUrl = null;
+
+    function clearPreview(){
+      barcodeSvg.style.display = 'none';
+      while(barcodeSvg.firstChild) barcodeSvg.removeChild(barcodeSvg.firstChild);
+      qrCanvas.style.display = 'none';
+      const ctx = qrCanvas.getContext && qrCanvas.getContext('2d');
+      if(ctx) ctx.clearRect(0,0,qrCanvas.width, qrCanvas.height);
+      displayValue.textContent = '';
+      lastDataUrl = null;
     }
-  }
 
-  async function shortenUrl(){
-    const value = input.value.trim();
-
-    if(!value){
-      status.textContent = 'Escribe o pega un enlace primero.';
-      status.className = 'status error';
-      return;
+    function showStatus(msg, isError){
+      statusEl.textContent = msg;
+      statusEl.style.color = isError ? '#f28b6b' : 'var(--text-dim)';
     }
 
-    if(!isValidUrl(value)){
-      status.textContent = 'Ese enlace no parece válido. Debe empezar con http:// o https://';
-      status.className = 'status error';
-      return;
-    }
+    async function generate(){
+      clearPreview();
+      const value = (dataInput.value || '').trim();
+      const type = typeSelect.value;
+      const showVal = document.getElementById('showValue').checked;
 
-    btn.disabled = true;
-    btn.textContent = 'Reduciendo…';
-    status.textContent = '';
-    status.className = 'status';
-    result.classList.remove('show');
+      if(!value){ showStatus('Escribe el dato para generar el código.', true); return; }
+      showStatus('Generando…');
 
-    try{
-      const res = await fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(value));
-      if(!res.ok) throw new Error('respuesta no válida del servicio');
-      const shortened = await res.text();
-
-      if(!shortened.startsWith('http')){
-        throw new Error('el servicio no devolvió un enlace válido');
+      try{
+        if(type === 'QR'){
+          // Use qrcode library to draw to canvas and get dataURL
+          qrCanvas.style.display = 'block';
+          // set size
+          const size = Math.min(360, Math.max(160, value.length * 6));
+          qrCanvas.width = size; qrCanvas.height = size;
+          await QRCode.toCanvas(qrCanvas, value, { width: size, margin: 1 });
+          lastDataUrl = qrCanvas.toDataURL('image/png');
+        }else{
+          // Use JsBarcode to draw to SVG
+          barcodeSvg.style.display = 'block';
+          // Create an SVG element child
+          JsBarcode(barcodeSvg, value, { format: type, displayValue: false, height:80, width:2, margin:10 });
+          // If user wants value shown, create text element
+          if(showVal){
+            displayValue.textContent = value;
+          }
+          // Serialize SVG to image via XMLSerializer -> dataURL (PNG) when needed
+          // We'll render via html2canvas when downloading
+        }
+        showStatus('Generado correctamente. Usa los botones para descargar.');
+      }catch(err){
+        console.error(err);
+        showStatus('Error generando el código. Revisa el dato y el tipo.', true);
       }
-
-      shortUrlEl.textContent = shortened;
-      result.classList.add('show');
-      status.textContent = '';
-    }catch(err){
-      status.textContent = 'No se pudo reducir el enlace. Intenta de nuevo en unos segundos.';
-      status.className = 'status error';
-    }finally{
-      btn.disabled = false;
-      btn.textContent = 'Reducir enlace';
     }
-  }
 
-  btn.addEventListener('click', shortenUrl);
-  input.addEventListener('keydown', (e) => {
-    if(e.key === 'Enter') shortenUrl();
-  });
-
-  copyBtn.addEventListener('click', async () => {
-    try{
-      await navigator.clipboard.writeText(shortUrlEl.textContent);
-      copyBtn.textContent = 'Copiado';
-      status.textContent = 'Enlace copiado al portapapeles.';
-      status.className = 'status ok';
-      setTimeout(() => { copyBtn.textContent = 'Copiar'; }, 1800);
-    }catch{
-      status.textContent = 'No se pudo copiar automáticamente. Selecciónalo a mano.';
-      status.className = 'status error';
+    async function renderPreviewToDataUrl(){
+      // Use html2canvas to render the preview area and return dataURL (JPEG)
+      const canvas = await html2canvas(preview, { backgroundColor: null, scale:2 });
+      return canvas.toDataURL('image/jpeg', 0.95);
     }
-  });
-</script>
 
+    async function downloadJPG(){
+      try{
+        if(!barcodeSvg.style.display && !qrCanvas.style.display){ showStatus('Genera el código primero.', true); return; }
+        showStatus('Preparando JPG...');
+        const dataUrl = await renderPreviewToDataUrl();
+        const a = document.createElement('a'); a.href = dataUrl; a.download = (dataInput.value || 'barcode') + '.jpg'; a.click();
+        lastDataUrl = dataUrl;
+        showStatus('JPG generado.');
+      }catch(err){ console.error(err); showStatus('No se pudo generar JPG.', true); }
+    }
+
+    async function downloadPDF(){
+      try{
+        if(!barcodeSvg.style.display && !qrCanvas.style.display){ showStatus('Genera el código primero.', true); return; }
+        showStatus('Preparando PDF...');
+        const dataUrl = await renderPreviewToDataUrl();
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: 'portrait' });
+        const imgProps = pdf.getImageProperties(dataUrl);
+        const pdfWidth = pdf.internal.pageSize.getWidth() - 20;
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        pdf.addImage(dataUrl, 'JPEG', 10, 10, pdfWidth, pdfHeight);
+        pdf.save((dataInput.value || 'barcode') + '.pdf');
+        lastDataUrl = dataUrl;
+        showStatus('PDF descargado.');
+      }catch(err){ console.error(err); showStatus('No se pudo generar PDF.', true); }
+    }
+
+    function downloadXLSX(){
+      try{
+        if(!barcodeSvg.style.display && !qrCanvas.style.display){ showStatus('Genera el código primero.', true); return; }
+        showStatus('Generando XLSX...');
+        // If we have a lastDataUrl from previous JPG/PDF generation, reuse it. Otherwise render now synchronously (async required)
+        const proceed = async () => {
+          if(!lastDataUrl){ lastDataUrl = await renderPreviewToDataUrl(); }
+          const wb = XLSX.utils.book_new();
+          const ws_data = [['Valor', 'ImagenDataURL'], [dataInput.value || '', lastDataUrl]];
+          const ws = XLSX.utils.aoa_to_sheet(ws_data);
+          XLSX.utils.book_append_sheet(wb, ws, 'Barcode');
+          XLSX.writeFile(wb, (dataInput.value || 'barcode') + '.xlsx');
+          showStatus('XLSX descargado.');
+        };
+        proceed();
+      }catch(err){ console.error(err); showStatus('No se pudo generar XLSX.', true); }
+    }
+
+    generateBtn.addEventListener('click', generate);
+    downloadJpgBtn.addEventListener('click', downloadJPG);
+    downloadPdfBtn.addEventListener('click', downloadPDF);
+    downloadXlsxBtn.addEventListener('click', downloadXLSX);
+
+    // allow Enter key to generate
+    dataInput.addEventListener('keydown', (e)=>{ if(e.key === 'Enter') generate(); });
+
+    // initial sample
+    dataInput.value = '123456789012';
+    typeSelect.value = 'CODE128';
+    // auto-generate first preview
+    setTimeout(()=>{ generate(); }, 400);
+  </script>
 </body>
 </html>
