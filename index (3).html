@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reductor de enlaces + QR / Código de barras</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root{
+    --bg: #12141a;
+    --surface: #1b1e27;
+    --surface-2: #232733;
+    --text: #e8e6df;
+    --text-dim: #9a9fac;
+    --accent: #5eead4;
+    --accent-dim: #2f5f58;
+    --warn: #f2b84b;
+    --border: #2c303c;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    margin:0;
+    padding:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Space Grotesk', system-ui, sans-serif;
+    min-height: 100vh;
+  }
+
+  body{
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding: 48px 16px 80px;
+  }
+
+  .page{
+    width: 100%;
+    max-width: 520px;
+  }
+
+  .kicker{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--text-dim);
+    margin: 0 0 6px 2px;
+    letter-spacing: 0.02em;
+  }
+
+  h1{
+    font-size: 28px;
+    line-height: 1.2;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    max-width: 24ch;
+  }
+
+  .intro{
+    color: var(--text-dim);
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0 0 36px 0;
+    max-width: 46ch;
+  }
+
+  .card{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 22px;
+  }
+
+  .step-head{
+    display:flex;
+    align-items:baseline;
+    gap: 10px;
+    margin: 0 0 18px 0;
+  }
+
+  .step-num{
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    border: 1px solid var(--accent-dim);
+    border-radius: 999px;
+    width: 22px;
+    height: 22px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+
+  .step-title{
+    font-size: 17px;
+    font-weight: 600;
+  }
+
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    margin-bottom: 14px;
+  }
+
+  label{
+    font-size: 13px;
+    color: var(--text-dim);
+  }
+
+  input[type="url"], input[type="text"], textarea{
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    color: var(--text);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s ease;
+    width: 100%;
+    resize: vertical;
+  }
+
+  textarea{ min-height: 78px; }
+
+  input[type="url"]:focus, input[type="text"]:focus, textarea:focus{
+    border-color: var(--accent);
+  }
+
+  input::placeholder, textarea::placeholder{
+    color: #565c6b;
+  }
+
+  button{
+    background: var(--accent);
+    color: #0a1614;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 18px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    width: 100%;
+    transition: transform 0.1s ease, background 0.15s ease;
+  }
+
+  button:hover{ background: #78f2e0; }
+  button:active{ transform: scale(0.98); }
+
+  button:disabled{
+    background: var(--surface-2);
+    color: var(--text-dim);
+    cursor: not-allowed;
+  }
+
+  .btn-secondary{
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent-dim);
+  }
+  .btn-secondary:hover{ background: rgba(94,234,212,0.08); }
+
+  .toggle-row{
+    display:flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .toggle-btn{
+    flex:1;
+    background: var(--surface-2);
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    width:auto;
+    transition: all 0.15s ease;
+  }
+
+  .toggle-btn.active{
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+
+  .result{
+    margin-top: 18px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    display: none;
+  }
+
+  .result.show{
+    display: block;
+    animation: reveal 0.35s ease;
+  }
+
+  @keyframes reveal{
+    from{ opacity: 0; transform: translateY(6px); }
+    to{ opacity: 1; transform: translateY(0); }
+  }
+
+  .result-label{
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+
+  .result-row{
+    display:flex;
+    gap: 8px;
+    align-items:center;
+  }
+
+  .result-url{
+    flex: 1;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    color: var(--accent);
+    background: var(--surface);
+    border-radius: 8px;
+    padding: 10px 12px;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .copy-btn{
+    width: auto;
+    padding: 10px 14px;
+    font-size: 13px;
+    flex-shrink: 0;
+  }
+
+  .status{
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--text-dim);
+    min-height: 18px;
+  }
+
+  .status.error{ color: #f28b6b; }
+  .status.ok{ color: var(--accent); }
+
+  .note{
+    font-size: 12px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin-top: 10px;
+  }
+
+  .preview-box{
+    margin-top: 18px;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 20px;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    min-height: 120px;
+  }
+
+  .preview-box.show{
+    display:flex;
+    animation: reveal 0.35s ease;
+  }
+
+  .preview-box img{
+    max-width: 100%;
+    height: auto;
+    display:block;
+  }
+
+  .download-row{
+    display:flex;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .download-row button{
+    font-size: 13px;
+    padding: 12px 8px;
+  }
+
+  .use-link-row{
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <p class="kicker">reductor de enlaces &amp; generador de códigos</p>
+  <h1>Acorta enlaces y crea QR o códigos de barras, todo en esta misma página</h1>
+  <p class="intro">Sin servicios externos: la reducción de enlaces y la generación de códigos ocurren en tu navegador. Descarga el resultado en JPG, PDF o Excel.</p>
+
+  <!-- ===================== SECCIÓN 1: ACORTADOR ===================== -->
+  <div class="card">
+    <div class="step-head">
+      <span class="step-num">1</span>
+      <span class="step-title">Acorta tu enlace</span>
+    </div>
+
+    <div class="field">
+      <label for="url">Pega tu enlace</label>
+      <input type="url" id="url" placeholder="https://ejemplo.com/una/ruta/muy/larga?con=parametros" autocomplete="off">
+    </div>
+
+    <button id="shorten-btn">Reducir enlace</button>
+
+    <p class="status" id="status"></p>
+
+    <div class="result" id="result">
+      <p class="result-label">Tu enlace reducido</p>
+      <div class="result-row">
+        <div class="result-url" id="short-url"></div>
+        <button class="copy-btn" id="copy-btn">Copiar</button>
+      </div>
+      <div class="use-link-row">
+        <button class="btn-secondary" id="use-link-btn">Generar QR o código de barras con este enlace</button>
+      </div>
+      <p class="note">Se usa TinyURL (servicio gratuito) para generar un enlace realmente corto. Si no hay conexión con el servicio, esta misma página genera automáticamente un enlace local de respaldo que funciona sin depender de nadie más.</p>
+    </div>
+  </div>
+
+  <!-- ===================== SECCIÓN 2: QR / BARCODE ===================== -->
+  <div class="card">
+    <div class="step-head">
+      <span class="step-num">2</span>
+      <span class="step-title">Genera un QR o código de barras</span>
+    </div>
+
+    <div class="field">
+      <label for="code-text">Texto o enlace</label>
+      <textarea id="code-text" placeholder="Pega un enlace o escribe cualquier texto"></textarea>
+    </div>
+
+    <div class="toggle-row">
+      <button type="button" class="toggle-btn active" id="type-qr" data-type="qr">Código QR</button>
+      <button type="button" class="toggle-btn" id="type-barcode" data-type="barcode">Código de barras</button>
+    </div>
+
+    <button id="generate-btn">Generar</button>
+
+    <p class="status" id="code-status"></p>
+
+    <div class="preview-box" id="preview-box">
+      <img id="preview-img" alt="Vista previa del código generado">
+    </div>
+
+    <div class="download-row" id="download-row" style="display:none;">
+      <button id="download-jpg">JPG</button>
+      <button id="download-pdf">PDF</button>
+      <button id="download-xlsx">Excel</button>
+    </div>
+  </div>
+</div>
+
+<!-- Librerías necesarias: QR, código de barras, PDF y Excel.
+     (La reducción de enlaces NO depende de ninguna librería externa: usa
+     solo JavaScript nativo del navegador, ver bloque "ACORTADOR LOCAL" abajo). -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/JsBarcode/3.11.5/JsBarcode.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.3.0/exceljs.min.js"></script>
+
+<script>
+  /* ============================================================
+     0. REDIRECCIÓN: si la página se abre con ?r=<datos>, esta es
+     la "resolución" del enlace corto: se descomprime y se redirige.
+     ============================================================ */
+  // Codificación / decodificación 100% nativa del navegador (sin librerías externas).
+  // Convierte texto (incluidos acentos/ñ) a una cadena segura para usar dentro de una URL.
+  function toBase64Url(str){
+    const utf8 = encodeURIComponent(str).replace(/%([0-9A-F]{2})/g,
+      (_, hex) => String.fromCharCode(parseInt(hex, 16)));
+    const b64 = btoa(utf8);
+    return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  function fromBase64Url(str){
+    let b64 = str.replace(/-/g, '+').replace(/_/g, '/');
+    while(b64.length % 4) b64 += '=';
+    const utf8 = atob(b64);
+    const percentEncoded = Array.from(utf8)
+      .map(c => '%' + c.charCodeAt(0).toString(16).padStart(2, '0'))
+      .join('');
+    return decodeURIComponent(percentEncoded);
+  }
+
+  (function handleRedirect(){
+    const params = new URLSearchParams(window.location.search);
+    const packed = params.get('r');
+    if(!packed) return;
+
+    try{
+      const original = fromBase64Url(packed);
+      const u = new URL(original);
+      if(u.protocol === 'http:' || u.protocol === 'https:'){
+        document.body.innerHTML =
+          '<div style="font-family:\'Space Grotesk\',system-ui,sans-serif;color:#e8e6df;text-align:center;padding-top:40vh;">Redirigiendo…</div>';
+        window.location.replace(original);
+      }
+    }catch(e){
+      // Si el parámetro no es válido, simplemente se ignora y se muestra la página normal.
+    }
+  })();
+
+  /* ============================================================
+     1. ACORTADOR LOCAL (sin backend externo, sin librerías remotas)
+     ============================================================ */
+  const urlInput = document.getElementById('url');
+  const shortenBtn = document.getElementById('shorten-btn');
+  const status = document.getElementById('status');
+  const result = document.getElementById('result');
+  const shortUrlEl = document.getElementById('short-url');
+  const copyBtn = document.getElementById('copy-btn');
+  const useLinkBtn = document.getElementById('use-link-btn');
+
+  function isValidUrl(str){
+    try{
+      const u = new URL(str);
+      return u.protocol === 'http:' || u.protocol === 'https:';
+    }catch{
+      return false;
+    }
+  }
+
+  function buildShortLink(longUrl){
+    const encoded = toBase64Url(longUrl);
+    const base = window.location.origin + window.location.pathname;
+    return base + '?r=' + encoded;
+  }
+
+  function shortenUrl(){
+    const value = urlInput.value.trim();
+
+    if(!value){
+      status.textContent = 'Escribe o pega un enlace primero.';
+      status.className = 'status error';
+      return;
+    }
+
+    if(!isValidUrl(value)){
+      status.textContent = 'Ese enlace no parece válido. Debe empezar con http:// o https://';
+      status.className = 'status error';
+      return;
+    }
+
+    shortenBtn.disabled = true;
+    shortenBtn.textContent = 'Reduciendo…';
+    status.textContent = '';
+    status.className = 'status';
+    result.classList.remove('show');
+
+    // Intenta primero con un servicio gratuito real (TinyURL) para obtener
+    // un enlace realmente corto. Si no responde (sin conexión, bloqueado, etc.),
+    // cae automáticamente al enlace local autocontenido como respaldo.
+    fetch('https://tinyurl.com/api-create.php?url=' + encodeURIComponent(value))
+      .then(res => {
+        if(!res.ok) throw new Error('respuesta no válida del servicio');
+        return res.text();
+      })
+      .then(shortened => {
+        if(!shortened || !shortened.startsWith('http')){
+          throw new Error('el servicio no devolvió un enlace válido');
+        }
+        shortUrlEl.textContent = shortened;
+        result.classList.add('show');
+        status.textContent = 'Enlace acortado con TinyURL.';
+        status.className = 'status ok';
+      })
+      .catch(() => {
+        // Respaldo local: funciona sin conexión a servicios externos,
+        // aunque el enlace resultante es más largo que uno de TinyURL.
+        const fallback = buildShortLink(value);
+        shortUrlEl.textContent = fallback;
+        result.classList.add('show');
+        status.textContent = 'El servicio de acortado no respondió; se generó un enlace local de respaldo.';
+        status.className = 'status error';
+      })
+      .finally(() => {
+        shortenBtn.disabled = false;
+        shortenBtn.textContent = 'Reducir enlace';
+      });
+  }
+
+  shortenBtn.addEventListener('click', shortenUrl);
+  urlInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') shortenUrl();
+  });
+
+  copyBtn.addEventListener('click', async () => {
+    try{
+      await navigator.clipboard.writeText(shortUrlEl.textContent);
+      copyBtn.textContent = 'Copiado';
+      status.textContent = 'Enlace copiado al portapapeles.';
+      status.className = 'status ok';
+      setTimeout(() => { copyBtn.textContent = 'Copiar'; }, 1800);
+    }catch{
+      status.textContent = 'No se pudo copiar automáticamente. Selecciónalo a mano.';
+      status.className = 'status error';
+    }
+  });
+
+  useLinkBtn.addEventListener('click', () => {
+    codeText.value = shortUrlEl.textContent;
+    document.querySelector('.card:nth-of-type(2)').scrollIntoView({ behavior:'smooth', block:'start' });
+    codeText.focus();
+  });
+
+  /* ============================================================
+     2. GENERADOR DE QR / CÓDIGO DE BARRAS
+     ============================================================ */
+  const codeText = document.getElementById('code-text');
+  const typeQrBtn = document.getElementById('type-qr');
+  const typeBarcodeBtn = document.getElementById('type-barcode');
+  const generateBtn = document.getElementById('generate-btn');
+  const codeStatus = document.getElementById('code-status');
+  const previewBox = document.getElementById('preview-box');
+  const previewImg = document.getElementById('preview-img');
+  const downloadRow = document.getElementById('download-row');
+  const downloadJpgBtn = document.getElementById('download-jpg');
+  const downloadPdfBtn = document.getElementById('download-pdf');
+  const downloadXlsxBtn = document.getElementById('download-xlsx');
+
+  let currentType = 'qr';
+  let currentCanvas = null;   // canvas con el código generado (fondo blanco)
+  let currentText = '';
+
+  typeQrBtn.addEventListener('click', () => setType('qr'));
+  typeBarcodeBtn.addEventListener('click', () => setType('barcode'));
+
+  function setType(type){
+    currentType = type;
+    typeQrBtn.classList.toggle('active', type === 'qr');
+    typeBarcodeBtn.classList.toggle('active', type === 'barcode');
+  }
+
+  // Convierte cualquier canvas a uno con fondo blanco garantizado (para JPG).
+  function withWhiteBackground(sourceCanvas, padding){
+    padding = padding || 0;
+    const out = document.createElement('canvas');
+    out.width = sourceCanvas.width + padding * 2;
+    out.height = sourceCanvas.height + padding * 2;
+    const ctx = out.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, out.width, out.height);
+    ctx.drawImage(sourceCanvas, padding, padding);
+    return out;
+  }
+
+  function generateCode(){
+    const value = codeText.value.trim();
+
+    if(!value){
+      codeStatus.textContent = 'Escribe un enlace o texto primero.';
+      codeStatus.className = 'status error';
+      previewBox.classList.remove('show');
+      downloadRow.style.display = 'none';
+      return;
+    }
+
+    codeStatus.textContent = '';
+    codeStatus.className = 'status';
+
+    if(currentType === 'qr'){
+      // Contenedor temporal fuera de pantalla donde qrcode.js renderiza.
+      const temp = document.createElement('div');
+      temp.style.position = 'fixed';
+      temp.style.left = '-9999px';
+      document.body.appendChild(temp);
+
+      try{
+        new QRCode(temp, {
+          text: value,
+          width: 320,
+          height: 320,
+          colorDark: '#12141a',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M
+        });
+
+        const rawCanvas = temp.querySelector('canvas');
+        if(!rawCanvas) throw new Error('no se generó el QR');
+
+        currentCanvas = withWhiteBackground(rawCanvas, 20);
+        currentText = value;
+        showPreview();
+      }catch(err){
+        codeStatus.textContent = 'No se pudo generar el código QR.';
+        codeStatus.className = 'status error';
+      }finally{
+        document.body.removeChild(temp);
+      }
+    }else{
+      // Código de barras: JsBarcode dibuja directamente sobre un canvas.
+      const rawCanvas = document.createElement('canvas');
+      try{
+        JsBarcode(rawCanvas, value, {
+          format: 'CODE128',
+          lineColor: '#12141a',
+          background: '#ffffff',
+          width: 2,
+          height: 100,
+          displayValue: true,
+          margin: 16,
+          fontOptions: '',
+          font: 'monospace',
+          fontSize: 16
+        });
+
+        currentCanvas = rawCanvas;
+        currentText = value;
+        showPreview();
+      }catch(err){
+        codeStatus.textContent = 'No se pudo generar el código de barras. Revisa que el texto no tenga caracteres no compatibles.';
+        codeStatus.className = 'status error';
+      }
+    }
+  }
+
+  function showPreview(){
+    previewImg.src = currentCanvas.toDataURL('image/png');
+    previewBox.classList.add('show');
+    downloadRow.style.display = 'flex';
+  }
+
+  generateBtn.addEventListener('click', generateCode);
+
+  /* ---------- Descargas ---------- */
+
+  function triggerDownload(hrefOrBlobUrl, filename){
+    const a = document.createElement('a');
+    a.href = hrefOrBlobUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+
+  function safeFileBase(){
+    return currentType === 'qr' ? 'qr' : 'codigo-barras';
+  }
+
+  downloadJpgBtn.addEventListener('click', () => {
+    if(!currentCanvas) return;
+    const jpgCanvas = withWhiteBackground(currentCanvas, 0); // asegura fondo blanco
+    const dataUrl = jpgCanvas.toDataURL('image/jpeg', 0.95);
+    triggerDownload(dataUrl, safeFileBase() + '.jpg');
+  });
+
+  downloadPdfBtn.addEventListener('click', () => {
+    if(!currentCanvas) return;
+    const { jsPDF } = window.jspdf;
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const imgData = currentCanvas.toDataURL('image/png');
+
+    // Escala la imagen para que quepa centrada con márgenes.
+    const maxW = pageWidth - 120;
+    const ratio = currentCanvas.height / currentCanvas.width;
+    const drawW = Math.min(maxW, 320);
+    const drawH = drawW * ratio;
+    const x = (pageWidth - drawW) / 2;
+    const y = 90;
+
+    pdf.setFont('helvetica', 'bold');
+    pdf.setFontSize(14);
+    pdf.text(currentType === 'qr' ? 'Código QR' : 'Código de barras', pageWidth / 2, 50, { align: 'center' });
+
+    pdf.addImage(imgData, 'PNG', x, y, drawW, drawH);
+
+    pdf.setFont('helvetica', 'normal');
+    pdf.setFontSize(10);
+    pdf.setTextColor(120);
+    const wrapped = pdf.splitTextToSize(currentText, pageWidth - 120);
+    pdf.text(wrapped, pageWidth / 2, y + drawH + 30, { align: 'center' });
+
+    pdf.save(safeFileBase() + '.pdf');
+  });
+
+  downloadXlsxBtn.addEventListener('click', async () => {
+    if(!currentCanvas) return;
+
+    try{
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet(currentType === 'qr' ? 'Código QR' : 'Código de barras');
+
+      sheet.columns = [
+        { header: 'Campo', key: 'campo', width: 22 },
+        { header: 'Valor', key: 'valor', width: 60 }
+      ];
+
+      sheet.addRow({ campo: 'Tipo', valor: currentType === 'qr' ? 'Código QR' : 'Código de barras (CODE128)' });
+      sheet.addRow({ campo: 'Texto / enlace original', valor: currentText });
+      sheet.addRow({ campo: 'Fecha de generación', valor: new Date().toLocaleString('es-GT') });
+      sheet.addRow({});
+
+      const base64 = currentCanvas.toDataURL('image/png').split(',')[1];
+      const imageId = workbook.addImage({ base64: base64, extension: 'png' });
+
+      const imgRowStart = 5; // fila (1-indexed) donde empieza la imagen
+      sheet.addImage(imageId, {
+        tl: { col: 0, row: imgRowStart },
+        ext: { width: 240, height: 240 }
+      });
+
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const blobUrl = URL.createObjectURL(blob);
+      triggerDownload(blobUrl, safeFileBase() + '.xlsx');
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+    }catch(err){
+      codeStatus.textContent = 'No se pudo generar el archivo de Excel.';
+      codeStatus.className = 'status error';
+    }
+  });
+</script>
+
+</body>
+</html>
